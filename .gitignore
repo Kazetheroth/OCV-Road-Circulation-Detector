@@ -360,3 +360,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+OCV_road_circulation_detector/opencv_world452d.dll
