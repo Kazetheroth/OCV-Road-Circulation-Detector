@@ -46,3 +46,17 @@ vector<uchar> Detection::findMatchings(Mat& gray1, Mat& gray2, vector<Point2f>& 
     calcOpticalFlowPyrLK(gray2, gray1, corner1, corner2, status, err, Size(10, 10), 4, criteria);
     return status;
 }
+
+void Detection::match(Ptr<DescriptorMatcher> matcher, Mat descriptor_object, Mat descriptors_scene, vector<KeyPoint> keypoints_object, vector<KeyPoint> keypoints_scene, vector<DMatch> matches)
+{
+    matcher->match(descriptor_object, descriptors_scene, matches);
+
+    std::vector<Point2f> obj;
+    std::vector<Point2f> scene;
+    for (size_t i = 0; i < matches.size(); i++)
+    {
+        //-- Get the keypoints from the good matches
+        obj.push_back(keypoints_object[matches[i].queryIdx].pt);
+        scene.push_back(keypoints_scene[matches[i].trainIdx].pt);
+    }
+}

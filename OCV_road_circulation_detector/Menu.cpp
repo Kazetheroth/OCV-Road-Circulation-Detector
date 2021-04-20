@@ -41,6 +41,11 @@ void Menu::startVideo(DIR* dir, string path)
 	int y = 0;
 
 	bool displayImg;
+
+	Ptr<ORB> orb = ORB::create();
+	Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
+	vector<KeyPoint> keypoints_current, keypoints_prev;
+	Mat descriptor_current, descriptor_prev;
 	
 	while (entry = readdir(dir))
 	{
@@ -63,6 +68,19 @@ void Menu::startVideo(DIR* dir, string path)
 
 		if (img.data && prevImg.data)
 		{
+			orb->detectAndCompute(img, noArray(), keypoints_current, descriptor_current);
+			orb->detectAndCompute(prevImg, noArray(), keypoints_prev, descriptor_prev);
+			vector<DMatch> matches;
+
+			matcher->match(descriptor_current, descriptor_prev, matches);
+
+			Mat outImg;
+			drawMatches(img, keypoints_current, prevImg, keypoints_prev, matches, outImg);
+
+			displayImg = true;
+			imshow("MonCul", outImg);
+			
+			/*
 			cornerA.clear();
 			cornerB.clear();
 			vector<uchar> currentStatus = Detection::findMatchings(img, prevImg, cornerA, cornerB);
@@ -78,6 +96,7 @@ void Menu::startVideo(DIR* dir, string path)
 			displayImg = true;
 			imshow("image_1", match1);
 			imshow("image_2", match2);
+			*/
 		}
 
 		if (displayImg)
