@@ -70,14 +70,15 @@ void Detection::flowMotion(Mat& prevImg, Mat& currentImg)
     int y = prevImg.rows;
 }
 
-void Detection::featureTracking(Mat& img1, Mat& img2, vector<Point2f>& points1, vector<Point2f>& points2, vector<uchar>& status)
+void Detection::tracking(Mat& img1, Mat& img2, vector<Point2f>& points1, vector<Point2f>& points2, vector<uchar>& status)
 {
+    goodFeaturesToTrack(img1, points1, 1500, 0.01, 20);
+	
     vector<float> err;
     TermCriteria criteria = TermCriteria((TermCriteria::COUNT)+(TermCriteria::EPS), 10, 0.03);
 
     calcOpticalFlowPyrLK(img1, img2, points1, points2, status, err, Size(10, 10), 4, criteria);
 
-    //getting rid of points for which the KLT tracking failed or those who have gone outside the frame
     int indexCorrection = 0;
     for (int i = 0; i < status.size(); i++)
     {
@@ -91,14 +92,4 @@ void Detection::featureTracking(Mat& img1, Mat& img2, vector<Point2f>& points1, 
             indexCorrection++;
         }
     }
-}
-
-void Detection::featureDetection(Mat& img1, vector<Point2f>& points1)
-{
-    vector<KeyPoint> keyPoints;
-    int threshold = 20;
-    bool nonmaxSuppression = true;
-
-    FAST(img1, keyPoints, threshold, nonmaxSuppression);
-    KeyPoint::convert(keyPoints, points1, vector<int>());
 }

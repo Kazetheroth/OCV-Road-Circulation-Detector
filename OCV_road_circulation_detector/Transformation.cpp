@@ -117,8 +117,7 @@ void Transformation::drawTrajectory(Mat& prevImg, Mat& currentImg, int idx, Mat&
 	Mat mask;
 
 	vector<uchar> currentStatus;
-	Detection::featureDetection(prevImg, prevPoints);
-	Detection::featureTracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
+	Detection::tracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
 
 	double focal = 718.8560 / 3;
 	Point2d point = Point2d(607.1928 / 3, 185.2157 / 3);
@@ -143,8 +142,7 @@ void Transformation::drawTrajectory(Mat& prevImg, Mat& currentImg, int idx, Mat&
 		}
 
 		if (prevPoints.size() < 2000) {
-			Detection::featureDetection(prevImg, prevPoints);
-			Detection::featureTracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
+			Detection::tracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
 		}
 
 		int x = int(tCopy.at<double>(0)) + 300;
