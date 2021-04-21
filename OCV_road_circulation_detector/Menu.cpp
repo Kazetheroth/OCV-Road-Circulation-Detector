@@ -30,78 +30,71 @@ void Menu::startMenu()
 	closedir(directory);
 }
 
+void Menu::printImg(vector<Mat> imgs)
+{
+	int i = 0;
+	for(Mat img : imgs)
+	{
+		printImg(img, i++);
+	}
+}
+
+void Menu::printImg(Mat img)
+{
+	printImg(img, 0);
+}
+
+void Menu::printImg(Mat img, int idx)
+{
+	imshow("img_"+idx, img);
+}
+
+
 void Menu::startVideo(DIR* dir, string path)
 {
 	dirent* entry;
 	Mat img;
 	Mat prevImg;
 
-	vector<Point2f> cornerA, cornerB;
 	int x = 0;
 	int y = 0;
 
-	bool displayImg;
+	bool displayMatching = false;
+	bool displayDisparity= true;
+	bool displayInterestPoint = false;
 
-	Ptr<ORB> orb = ORB::create();
-	Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
-	vector<KeyPoint> keypoints_current, keypoints_prev;
-	Mat descriptor_current, descriptor_prev;
+	Mat outImg;
+	vector<Mat> outImgs;
 	
 	while (entry = readdir(dir))
 	{
-		displayImg = false;
 		prevImg = img;
 
-		img = imread(path + "/" + entry->d_name);
-		
-		if (img.data)
-		{
-			if (x == 0 && y == 0)
-			{
-				x = img.cols;
-				y = img.rows;
-			}
-			
-			resize(img, img, Size(x, y));
-			cvtColor(img, img, COLOR_BGR2GRAY);
-		}
+		img = transformation.readImgFromPath(path + "/" + entry->d_name, x, y);
 
 		if (img.data && prevImg.data)
 		{
-			orb->detectAndCompute(img, noArray(), keypoints_current, descriptor_current);
-			orb->detectAndCompute(prevImg, noArray(), keypoints_prev, descriptor_prev);
-			vector<DMatch> matches;
-
-			matcher->match(descriptor_current, descriptor_prev, matches);
-
-			Mat outImg;
-			drawMatches(img, keypoints_current, prevImg, keypoints_prev, matches, outImg);
-
-			displayImg = true;
-			imshow("MonCul", outImg);
+			if (displayMatching)
+			{
+				outImg = transformation.computeMatchings(img, prevImg);
+				printImg(outImg);
+			}
+			if (displayInterestPoint)
+			{
+				outImgs = transformation.computeInterestingPoints(img, prevImg);
+				printImg(outImgs);
+			}
+			if (displayDisparity)
+			{
+				outImg = transformation.computeDisparity(img, prevImg);
+				printImg(outImg);
+			}
 			
-			/*
-			cornerA.clear();
-			cornerB.clear();
-			vector<uchar> currentStatus = Detection::findMatchings(img, prevImg, cornerA, cornerB);
-			vector<uchar> prevStatus = Detection::findMatchings(prevImg, img, cornerB, cornerA);
-
-			Mat match1, match2;
-
-			img.copyTo(match1);
-			prevImg.copyTo(match2);
-
- 			Detection::displayMatchings(match1, match2, cornerA, cornerB, currentStatus, prevStatus);
-
-			displayImg = true;
-			imshow("image_1", match1);
-			imshow("image_2", match2);
-			*/
-		}
-
-		if (displayImg)
-		{
-			waitKey(0);
+			char c = waitKey(0);
+			if (c == 27)
+			{
+				return;
+			}
 		}
 	}
 }
