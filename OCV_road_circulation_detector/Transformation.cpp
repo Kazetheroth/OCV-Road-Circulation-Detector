@@ -120,8 +120,8 @@ void Transformation::drawTrajectory(Mat& prevImg, Mat& currentImg, int idx, Mat&
 	Detection::featureDetection(prevImg, prevPoints);
 	Detection::featureTracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
 
-	double focal = 718.8560;
-	Point2d point = Point2d(607.1928, 185.2157);
+	double focal = 718.8560 / 3;
+	Point2d point = Point2d(607.1928 / 3, 185.2157 / 3);
 
 	Mat essentialMat = findEssentialMat(prevPoints, currentPoints, focal, point, RANSAC, 0.999, 1.0, mask);
 	recoverPose(essentialMat, prevPoints, currentPoints, recover, t, focal, point, mask);
@@ -157,7 +157,7 @@ void Transformation::drawTrajectory(Mat& prevImg, Mat& currentImg, int idx, Mat&
 	imshow("Trajectory", traj);
 }
 
-double Transformation::getAbsoluteScale(int frameId)
+void Transformation::loadScale()
 {
 	string line;
 	ifstream poseFile(imgDirectory + pathSelected + ".txt");
@@ -168,27 +168,42 @@ double Transformation::getAbsoluteScale(int frameId)
 	int i = 0;
 	if (poseFile.is_open())
 	{
-		while ((getline(poseFile, line)) && (i <= frameId))
+		while (getline(poseFile, line))
 		{
 			z_prev = z;
 			x_prev = x;
 			y_prev = y;
+			
 			istringstream in(line);
-
 			for (int j = 0; j < 12; j++) {
 				in >> z;
-				if (j == 7) y = z;
-				if (j == 3)  x = z;
+
+				if (j == 7) {
+					y = z;
+				}
+				else if (j == 3) {
+					x = z;
+				}
 			}
 
+			if (i != 0)
+			{
+				scales.push_back(
+					sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev))
+				);
+			}
+			
 			i++;
 		}
 
 		poseFile.close();
-	} else {
-		cout << "Unable to open file";
-		return 0;
 	}
+	else {
+		cout << "Unable to open file";
+	}
+}
 
-	return sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev));
+double Transformation::getAbsoluteScale(int frameId)
+{
+	return scales[frameId - 2];
 }

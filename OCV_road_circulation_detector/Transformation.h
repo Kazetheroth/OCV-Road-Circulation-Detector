@@ -15,6 +15,7 @@ private:
 	string pathSelected;
 	
 	double getAbsoluteScale(int frameId);
+	vector<double> scales;
 
 public:
 	Transformation();
@@ -28,4 +29,6 @@ public:
 	Mat computeDisparity(Mat& img1, Mat& img2);
 	Mat computeTrajectoryPoints(Mat& img, Mat& prevImg);
 	void drawTrajectory(Mat& img1, Mat& img2, int idx, Mat& traj);
+
+	void loadScale();
 };

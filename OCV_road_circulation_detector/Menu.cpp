@@ -69,6 +69,11 @@ void Menu::startVideo(DIR* dir, string path)
 
 	int nbFrame = 0;
 	Mat traj = Mat::zeros(600, 600, CV_8UC3);
+
+	if (displayTrajectory)
+	{
+		transformation.loadScale();
+	}
 	
 	while (entry = readdir(dir))
 	{
@@ -101,8 +106,17 @@ void Menu::startVideo(DIR* dir, string path)
 			}
 			if (displayTrajectory)
 			{
-				transformation.drawTrajectory(img, prevImg, nbFrame, traj);
-				printImg(img);
+				Mat imgCopy, prevImgCopy;
+
+				resize(img, imgCopy, Size(img.cols / 3, img.rows / 3));
+				resize(prevImg, prevImgCopy, Size(img.cols / 3, img.rows / 3));
+
+				transformation.drawTrajectory(imgCopy, prevImgCopy, nbFrame, traj);
+
+				if (!displayTrajectoryPoints)
+				{
+					printImg(img);
+				}
 			}
 			
 			char c = waitKey(1);
