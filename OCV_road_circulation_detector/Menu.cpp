@@ -1,9 +1,8 @@
 #include "Menu.h"
-#include "Constants.h"
 
 void Menu::startMenu()
 {
-	string selection = "";
+	selection = "";
 	string defaultSelection = "road1";
 	DIR* directory;
 
@@ -25,6 +24,7 @@ void Menu::startMenu()
 		}
 	} while (directory == NULL);
 
+	transformation.setPath(selection);
 	startVideo(directory, selection);
 
 	closedir(directory);
@@ -49,7 +49,6 @@ void Menu::printImg(Mat img, int idx)
 	imshow("img_"+idx, img);
 }
 
-
 void Menu::startVideo(DIR* dir, string path)
 {
 	dirent* entry;
@@ -60,11 +59,16 @@ void Menu::startVideo(DIR* dir, string path)
 	int y = 0;
 
 	bool displayMatching = false;
-	bool displayDisparity= true;
+	bool displayDisparity= false;
 	bool displayInterestPoint = false;
+	bool displayTrajectoryPoints = false;
+	bool displayTrajectory = true;
 
 	Mat outImg;
 	vector<Mat> outImgs;
+
+	int nbFrame = 0;
+	Mat traj = Mat::zeros(600, 600, CV_8UC3);
 	
 	while (entry = readdir(dir))
 	{
@@ -74,6 +78,7 @@ void Menu::startVideo(DIR* dir, string path)
 
 		if (img.data && prevImg.data)
 		{
+			nbFrame++;
 			if (displayMatching)
 			{
 				outImg = transformation.computeMatchings(img, prevImg);
@@ -89,8 +94,18 @@ void Menu::startVideo(DIR* dir, string path)
 				outImg = transformation.computeDisparity(img, prevImg);
 				printImg(outImg);
 			}
+			if (displayTrajectoryPoints)
+			{
+				outImg = transformation.computeTrajectoryPoints(img, prevImg);
+				printImg(outImg);
+			}
+			if (displayTrajectory)
+			{
+				transformation.drawTrajectory(img, prevImg, nbFrame, traj);
+				printImg(img);
+			}
 			
-			char c = waitKey(0);
+			char c = waitKey(1);
 			if (c == 27)
 			{
 				return;

@@ -1,10 +1,18 @@
 #include "Transformation.h"
 
+#include <fstream>
+
 Transformation::Transformation()
 {
 	orb = ORB::create();
 	matcher = DescriptorMatcher::create("BruteForce-Hamming");
 	stereoBm = StereoBM::create();
+}
+
+
+void Transformation::setPath(string path)
+{
+	pathSelected = path;
 }
 
 Mat Transformation::readImgFromPath(string path, int& outX, int& outY)
@@ -76,4 +84,111 @@ Mat Transformation::computeDisparity(Mat& img1, Mat& img2)
 	disparity.convertTo(disparity, CV_8U, coef, offset);
 
 	return disparity;
+}
+
+
+Mat Transformation::computeTrajectoryPoints(Mat& img, Mat& prevImg)
+{
+	vector<Point2f> prevPoints, currentPoints;
+	vector<uchar> currentStatus = Detection::findMatchings(img, prevImg, prevPoints, currentPoints);
+
+	Mat mask = Mat::zeros(prevImg.size(), prevImg.type());
+
+	vector<Point2f> goodNew;
+	for (int i = 0; i < prevPoints.size(); ++i)
+	{
+		if (currentStatus[i] == 1)
+		{
+			goodNew.push_back(prevPoints[i]);
+			line(mask, prevPoints[i], currentPoints[i], Scalar(255, 0, 0), 2);
+			circle(img, prevPoints[i], 5, Scalar(255, 0, 0), -1);
+		}
+	}
+
+	Mat finalImg;
+	add(img, mask, finalImg);
+
+	return finalImg;
+}
+
+void Transformation::drawTrajectory(Mat& prevImg, Mat& currentImg, int idx, Mat& traj)
+{
+	vector<Point2f> prevPoints, currentPoints;
+	Mat mask;
+
+	vector<uchar> currentStatus;
+	Detection::featureDetection(prevImg, prevPoints);
+	Detection::featureTracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
+
+	double focal = 718.8560;
+	Point2d point = Point2d(607.1928, 185.2157);
+
+	Mat essentialMat = findEssentialMat(prevPoints, currentPoints, focal, point, RANSAC, 0.999, 1.0, mask);
+	recoverPose(essentialMat, prevPoints, currentPoints, recover, t, focal, point, mask);
+
+	if (idx == 1)
+	{
+		recoverCopy = recover.clone();
+		tCopy = t.clone();
+	} else
+	{
+		double scale = getAbsoluteScale(idx);
+
+		if ((scale > 0.1) && (t.at<double>(2) > t.at<double>(0)) && (t.at<double>(2) > t.at<double>(1))) {
+			tCopy = tCopy + scale * (recoverCopy * t);
+			recoverCopy = recover * recoverCopy;
+		}
+		else {
+			cout << "scale below 0.1, or incorrect translation" << endl;
+		}
+
+		if (prevPoints.size() < 2000) {
+			Detection::featureDetection(prevImg, prevPoints);
+			Detection::featureTracking(prevImg, currentImg, prevPoints, currentPoints, currentStatus);
+		}
+
+		int x = int(tCopy.at<double>(0)) + 300;
+		int y = int(tCopy.at<double>(2)) + 100;
+		
+		circle(traj, Point(x, y), 1, CV_RGB(255, 0, 0), 2);
+		rectangle(traj, Point(10, 30), Point(550, 50), CV_RGB(0, 0, 0), 1);
+	}
+
+	imshow("Trajectory", traj);
+}
+
+double Transformation::getAbsoluteScale(int frameId)
+{
+	string line;
+	ifstream poseFile(imgDirectory + pathSelected + ".txt");
+
+	double x = 0, y = 0, z = 0;
+	double x_prev, y_prev, z_prev;
+
+	int i = 0;
+	if (poseFile.is_open())
+	{
+		while ((getline(poseFile, line)) && (i <= frameId))
+		{
+			z_prev = z;
+			x_prev = x;
+			y_prev = y;
+			istringstream in(line);
+
+			for (int j = 0; j < 12; j++) {
+				in >> z;
+				if (j == 7) y = z;
+				if (j == 3)  x = z;
+			}
+
+			i++;
+		}
+
+		poseFile.close();
+	} else {
+		cout << "Unable to open file";
+		return 0;
+	}
+
+	return sqrt((x - x_prev) * (x - x_prev) + (y - y_prev) * (y - y_prev) + (z - z_prev) * (z - z_prev));
 }

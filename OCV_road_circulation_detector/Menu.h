@@ -9,6 +9,7 @@
 class Menu
 {
 private:
+	string selection;
 	Transformation transformation;
 	
 	void startVideo(DIR* dir, string path);
@@ -17,5 +18,6 @@ private:
 	void printImg(Mat img);
 	
 public:
+	
 	void startMenu();
 };
