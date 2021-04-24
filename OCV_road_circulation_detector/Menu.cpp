@@ -63,6 +63,7 @@ void Menu::startVideo(DIR* dir, string path)
 	bool displayInterestPoint = false;
 	bool displayTrajectoryPoints = false;
 	bool displayTrajectory = true;
+	bool displayTwoVector = true;
 
 	Mat outImg;
 	vector<Mat> outImgs;
@@ -113,10 +114,14 @@ void Menu::startVideo(DIR* dir, string path)
 
 				transformation.drawTrajectory(imgCopy, prevImgCopy, nbFrame, traj);
 
-				if (!displayTrajectoryPoints)
+				if (!displayTrajectoryPoints && !displayTwoVector)
 				{
 					printImg(img);
 				}
+			}
+			if (displayTwoVector)
+			{
+				transformation.detectVector(img, prevImg);
 			}
 			
 			char c = waitKey(1);
@@ -126,4 +131,6 @@ void Menu::startVideo(DIR* dir, string path)
 			}
 		}
 	}
+
+	waitKey(0);
 }

@@ -9,8 +9,8 @@ private:
 	Ptr<ORB> orb;
 	Ptr<DescriptorMatcher> matcher;
 	Ptr<StereoBM> stereoBm;
-	Mat t, recover;
-	Mat recoverCopy, tCopy;
+	Mat t, r;
+	Mat rCopy, tCopy;
 
 	string pathSelected;
 	
@@ -29,6 +29,8 @@ public:
 	Mat computeDisparity(Mat& img1, Mat& img2);
 	Mat computeTrajectoryPoints(Mat& img, Mat& prevImg);
 	void drawTrajectory(Mat& img1, Mat& img2, int idx, Mat& traj);
+	void detectVector(Mat& img, Mat& prevImg);
+	void getMoyVector(Mat& img, Mat& prevImg, Point2f& point1, Point2f& point2);
 
 	void loadScale();
 };
